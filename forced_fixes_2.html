@@ -1,0 +1,348 @@
+<!--
+First Iteration - The circles are arranged into larger circles to show the relative "footprints" of consumption and emissions.
+
+This code was modified from: https://bl.ocks.org/ericsoco/38b4f8b51ecf116e6fb0727d25687e8e.
+-->
+
+<!doctype html>
+<meta charset="utf-8">
+
+<!-- CSS style for the tooltip-->
+<style type="text/css">
+    div.tooltip {
+        position: absolute;
+        text-align: left;
+        width: 250px;
+        padding: 2px;
+        font: 12px sans-serif;
+        background: lightgrey;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+</style>
+
+
+<!-- Load D3 and library to make legends more easily. -->
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+
+
+<!-- Arrange the elements on the page -->
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h3>
+                "Footprints" Showing Consumption (left) and CO2 Emissions (right) of Different Foods around the World
+            </h3>
+        </div>
+    </div>
+
+    <div class="col">
+            <svg id="svg1" height="700" width="500">
+                <g id="body" transform="translate(0,0)"></g>
+            </svg>
+
+            <svg id="svg2" height="700" width="750">
+                <g id="body2" transform="translate(0,0)"></g>
+            </svg>
+            <svg id="container2" height="600" width="180">
+                <g id="svg3" transform="translate(0,0)"></g>
+            </svg>>
+
+    </div>
+    </div>
+
+<script>
+
+//Make two charts - one for consumption and one for emissions.
+showdata("#svg1", 1);
+showdata("#svg2", 2);
+
+/**
+ * Plots bubbles clustered by continent into a larger circle using D3's force layout functionality.
+ * @param selector: the SVG section to draw on.
+ * @param aspect: indicates whether to plot consumption (1) or emissions (2).
+ */
+function showdata(selector, aspect) {
+
+    //Colour codes for the different continents.
+    var color_table = {
+        "North America" :   "#1B998B",
+        "South America" :   "#58355E",
+        "Europe" :          "#FFF689",
+        "Africa" :          "#CFFFB0",
+        "Asia" :            "#E03616",
+        "Oceania" :         "#C874D9"
+    };
+
+    //List of continents in the dataset.
+    var continent_list = {"North America": 1, "South America": 2, "Africa": 3, "Europe": 4, "Asia": 5, "Oceania": 6};
+    //List of foods in the dataset.
+    var food_list = {"Wheat and Wheat Products":1, "Milk - inc. cheese":2, "Beef":3, "Eggs":4,"Poultry":5,"Lamb & Goat":6,"Pork":7,"Nuts inc. Peanut Butter":8,"Rice":9, "Soybeans":10,"Fish":11}
+    //List of emojis to represent the different food categories.
+    var shape_list = {1: "\u{1F35E}", 2: "\u{1F95B}", 3:"\u{1F404}", 4:"\u{1F95A}", 5:"\u{1F413}", 6:"\u{1F410}", 7:"\u{1F437}", 8:"\u{1F95C}", 9:"\u{1F35A}", 10:"\u{1F331}", 11:"\u{1F41F}"}
+
+    //Set width and height.
+    let width;
+    if(selector == "#svg1"){
+        width =500}
+    else{width = 700}
+    let height = 700,
+        padding = 1.5, // separation between same-color circles
+        maxRadius = 30; //Maximum size radius to plot.
+
+    let m = 6, // number of distinct clusters
+        clusters = new Array(m);
+
+    // Define the div for the tooltip
+    let div = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    //load food emissions data
+    d3.csv("addedcontinents.csv", function (d) {
+        //Scale the radius so area is proportional to the data.
+        let radiusScale = d3.scalePow().exponent(0.5)
+            .domain(d3.extent(d, function (d) {
+                return +d.emissions;
+            }))
+            .range([0, maxRadius]);
+
+        //Make the nodes.
+        let nodes = d.map((d) => {
+            let scaledRadius;
+            let forcedCluster;
+            // scale radius to fit on the screen
+            if(aspect == 1) {
+                scaledRadius = radiusScale(+d.consumption),
+                    forcedCluster = +continent_list[d.continent];
+            } else {
+                scaledRadius = radiusScale(+d.emissions),
+                    forcedCluster = +continent_list[d.continent];
+            }
+
+            // add cluster id and radius to array
+            if(selector == "#svg1") {
+                d = {
+                    cluster: forcedCluster,
+                    radius: scaledRadius,
+                    continent: d.continent,
+                    emissions: d.emissions,
+                    consumption: d.consumption,
+                    country: d.country,
+                    food: d.food,
+                    icon: shape_list[food_list[d.food]],
+                    x: Math.cos(forcedCluster / m * 100 * m) * 100 + width / 2 + Math.random() ,
+                    y: Math.sin(forcedCluster / m * 100) * 100 + height / 2 + Math.random()
+                };
+                // add to clusters array if it doesn't exist or the radius is larger than another radius in the cluster
+                if (!clusters[forcedCluster] || (scaledRadius > clusters[forcedCluster].r)) clusters[forcedCluster] = d;
+
+                return d;
+            }
+            //SVG 2 takes up more space - move circles left.
+            else {
+                d = {
+                    cluster: forcedCluster,
+                    radius: scaledRadius,
+                    continent: d.continent,
+                    emissions: d.emissions,
+                    consumption: d.consumption,
+                    country: d.country,
+                    food: d.food,
+                    icon: shape_list[food_list[d.food]],
+                    x: Math.cos(forcedCluster / m * 100 * m ) * 100 + width / 2 + Math.random() - 50,
+                    y: Math.sin(forcedCluster / m * 100 ) * 100 + height / 2 + Math.random()
+                };
+                // add to clusters array if it doesn't exist or the radius is larger than another radius in the cluster
+                if (!clusters[forcedCluster] || (scaledRadius > clusters[forcedCluster].r)) clusters[forcedCluster] = d;
+
+                return d;
+            }
+        });
+
+
+        //Define the forces.
+        var force = d3.forceSimulation()
+            // keep entire simulation balanced around screen center
+            .force('center', d3.forceCenter(width / 2, height / 2))
+
+            // cluster by section
+            .force('cluster', cluster()
+                .strength(0.2))
+
+            // apply collision with padding
+            .force('collide', d3.forceCollide(d => d.radius + padding)
+                .strength(0))
+
+            .on('tick', layoutTick)
+            .nodes(nodes);
+
+
+        //Select the SVG.
+       var svg = d3.select(selector)
+           .append("svg")
+           .attr("width", width)
+           .attr("height", height)
+
+
+        //Add the nodes.
+        var node = svg.selectAll("circle")
+            .data(nodes)
+            .enter().append("g")
+            //Show label and data on mouseover.
+            .on("mouseover", function (d) {
+                div.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                div.html("Continent: " + d.continent + "<br/>Country: " + d.country + "<br/>Food type: " + d.food +
+                    "<br/>Co2 emission(Kg/Person/Year): " + d.emissions + "<br/>Consumption (Kg/Person/Year): " + d.consumption)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function (d) {
+                div.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+       //Colour code the nodes based on continent.
+        node.append("circle").style("fill", function (d) {
+            return color_table[d.continent];
+        })
+        .attr("r", function(d){return d.radius})
+
+        //Add the emoji symbols on top of the circles to show food type.
+        node.append("text")
+            .attr("dy", ".3em")
+            .style("text-anchor", "middle")
+            .text(function(d) { return d.icon })
+            .style("font-size", function(d){return d.radius});
+
+
+        // ramp up collision strength to provide smooth transition
+        var transitionTime = 3000;
+        var t = d3.timer(function (elapsed) {
+            var dt = elapsed / transitionTime;
+            force.force('collide').strength(Math.pow(dt, 2) * 0.7);
+            if (dt >= 1.0) t.stop();
+        });
+
+        //Function to arrange nodes.
+        function layoutTick(e) {
+            node
+                .attr("x", function (d) {
+                    return d.x;
+                })
+                .attr("y", function (d) {
+                    return d.y;
+                })
+                .attr("transform", function (d) {
+                    var k = "translate(" + d.x + "," + d.y + ")";
+                    return k;
+                })
+
+        }
+
+        // Move d to be adjacent to the cluster node.
+        // from: https://bl.ocks.org/mbostock/7881887
+        function cluster() {
+            var nodes,
+                strength = 0.1;
+
+            function force(alpha) {
+
+                // scale + curve alpha value
+                alpha *= strength * alpha;
+
+                nodes.forEach(function (d) {
+
+                    var cluster = clusters[d.cluster];
+                    if (cluster === d) return;
+
+                    let x = d.x - cluster.x,
+                        y = d.y - cluster.y,
+                        l = Math.sqrt(x * x + y * y),
+                        r = d.radius + cluster.radius;
+
+                    if (l != r) {
+                        l = (l - r) / l * alpha;
+                        d.x -= x *= l;
+                        d.y -= y *= l;
+                        cluster.x += x;
+                        cluster.y += y;
+                    }
+                });
+
+            }
+
+            force.initialize = function (_) {
+                nodes = _;
+            }
+
+            force.strength = _ => {
+                strength = _ == null ? strength : _;
+                return force;
+            };
+
+            return force;
+
+        }
+
+        //Add a color legend to the rightmost division of the page.
+        //Code for legend was adapted from: https://www.d3-graph-gallery.com/graph/custom_legend.html.
+        if (selector == "#svg2"){
+            // append the svg object to the body of the page.
+            var svg3 = d3.select("#svg3")
+                .append("svg")
+                .attr("width", 400)
+                .attr("height", 600)
+                .append("g")
+
+            var keys = ["North America", "South America", "Africa", "Europe", "Asia", "Oceania"];
+            // Add one dot in the legend for each name.
+            svg3.selectAll("mydots")
+                .data(keys)
+                .enter()
+                .append("circle")
+                .attr("cx", 40)
+                .attr("cy", function(d,i){ return 50 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+                .attr("r", 7)
+                .style("fill", function(d){ return color_table[d]})
+
+            // Add labels to each dot.
+            svg3.selectAll("mylabels")
+                .data(keys)
+                .enter()
+                .append("text")
+                .attr("x", 60)
+                .attr("y", function(d,i){ return 50 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+                .style("fill", "black")
+                .text(function(d){ return d})
+                .attr("text-anchor", "left")
+                .style("alignment-baseline", "middle")
+
+            //Add a size legend to the right most division of the page.
+            var svg3 = d3.select("#svg3")
+            svg3.append("g")
+                .attr("class", "legendSize")
+                .attr("transform", "translate(10, 250)");
+
+            var legendSize = d3.legendSize()
+                .scale(radiusScale)
+                .shape('circle')
+                .shapePadding(15)
+                .labelOffset(20)
+                .orient('vertical')
+                .title("Consumption/CO2 Emissions Magnititude (kg/person/year)")
+                .titleWidth(150)
+
+            svg3.select(".legendSize")
+                .call(legendSize);
+        }
+
+    })
+}
+
+</script>
