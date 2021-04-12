@@ -1,0 +1,573 @@
+<!--
+Final Static Visualization: Uses small multiple maps to show the consumption and emissions of different food types for 130 countries
+around the world. A bar chart below the small multiples displays the global averages for each country to allow easy comparisons.
+The colour scales are logarithmic so that differences at the lower end can be seen. A tooltip appears on mouseover to show variable names
+and values.
+
+The map portion was adapted from the code provided in Tutorial 7, and the bar chart was modified from
+https://bl.ocks.org/bricedev/0d95074b6d83a77dc3ad
+-->
+
+<html>
+<meta charset="UTF-8">
+<head>
+    <!--CSS style for the tooltip-->
+    <style type="text/css">
+        div.tooltip {
+            position: absolute;
+            text-align: left;
+            width: 250px;
+            /*height: 28px;         */
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightgrey;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+    </style>
+
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto;
+        }
+
+        .grid-item {
+            font: 20px sans-serif;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<script src="d3.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script
+        src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"
+></script>
+<script src="https://d3js.org/d3-scale.v3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+
+<!-- grid setup -->
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h3>
+                Global Consumption and CO2 Emissions of Different Foods
+            </h3>
+        </div>
+    </div>
+
+    <!-- Container for small multiples -->
+    <div class="grid-container">
+
+        <div class="grid-item"> <svg id="container" height="100" width="150">
+            <g id="body" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container2" height="100" width="150">
+            <g id="body2" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container3" height="100" width="150">
+            <g id="body3" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container4" height="100" width="150">
+            <g id="body4" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container5" height="100" width="150">
+            <g id="body5" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container6"height="100" width="150">
+            <g id="body6" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container7" height="100" width="150">
+            <g id="body7" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container8" height="100" width="150">
+            <g id="body8" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container9" height="100" width="150">
+            <g id="body9" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container10" height="100" width="150">
+            <g id="body10" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container11" height="100" width="150">
+            <g id="body11" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container12" height="100" width="150">
+            <g id="body12" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container13" height="100" width="150">
+            <g id="body13" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container14" height="100" width="150">
+            <g id="body14" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container15" height="100" width="150">
+            <g id="body15" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container16" height="100" width="150">
+            <g id="body16" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container17" height="100" width="150">
+            <g id="body17" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container18"height="100" width="150">
+            <g id="body18" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"> <svg id="container19" height="100" width="150">
+            <g id="body19" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container20" height="100" width="150">
+            <g id="body20" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container21" height="100" width="150">
+            <g id="body21" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <div class="grid-item"><svg id="container22" height="100" width="150">
+            <g id="body22" transform="translate(0,0)"></g>
+        </svg></div>
+
+        <!-- Labels for the small multiples -->
+        <div class="grid-item"> 🐄 </div>
+        <div class="grid-item"> 🥛 </div>
+        <div class="grid-item"> 🐐 </div>
+        <div class="grid-item"> 🐷 </div>
+        <div class="grid-item"> 🍚  </div>
+        <div class="grid-item"> 🐟 </div>
+        <div class="grid-item"> 🐓 </div>
+        <div class="grid-item"> 🍞 </div>
+        <div class="grid-item"> 🥚 </div>
+        <div class="grid-item"> 🥜 </div>
+        <div class="grid-item"> 🌱 </div>
+
+    </div>
+
+    <!-- Container for the bar chart -->
+    <svg id="container23" height="950" width="1800">
+        <g id="body23" transform="translate(0,0)"></g>
+    </svg>
+</div>
+
+<script>
+
+    //List of food categories.
+    var food_list = ["Beef","Milk - inc. cheese","Lamb & Goat","Pork","Rice","Fish","Poultry","Wheat and Wheat Products","Eggs","Nuts inc. Peanut Butter", "Soybeans"]
+
+    //List of shapes to show the different foods.
+    var shape_list = {7: "\u{1F35E}", 1: "\u{1F95B}", 0:"\u{1F404}", 8:"\u{1F95A}", 6:"\u{1F413}", 2:"\u{1F410}", 3:"\u{1F437}", 9:"\u{1F95C}", 4:"\u{1F35A}", 10:"\u{1F331}", 5:"\u{1F41F}"}
+
+    //List of the SVG group names in which to plot small multiples
+    var cons_List = ["#body","#body2","#body3","#body4","#body5","#body6","#body7","#body8","#body9","#body10","#body11"]
+    var em_List = ["#body12","#body13","#body14","#body15","#body16","#body17","#body18","#body19","#body20","#body21","#body22"]
+
+    //Promise the map data to the emissions/consumption data.
+    Promise.all([
+        d3.csv("addedcontinents.csv"),
+        d3.json("countries.geo.json")
+    ]).then(showData);
+
+    //Plot the information.
+    function showData(datasources) {
+        let mapInfo = datasources[1]
+        let data = datasources[0]
+
+        //Set up the tooltip.
+        let div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        //Get a list of countries in the dataset.
+        var country_list = d3.map(data, function(d){return d.country;}).keys();
+
+        //Get the mean emissions for each country.
+        let edataIndex = {};
+        for (let c of country_list) {
+            let filtered = data.filter(function(d){return d.country == c})
+            edataIndex[c] = d3.mean(filtered, function(d){return +d.emissions})
+        }
+
+
+        //Get the mean consumption for each country.
+        let cdataIndex = {};
+        for (let c of country_list) {
+            let filtered = data.filter(function(d){return d.country == c})
+            cdataIndex[c] = d3.mean(filtered, function(d){ return +d.consumption})
+        }
+
+        //Get a list of numerical indicators for the continents.
+        let continentIndex = {};
+        for (let c of data) {
+            let continent = c.continent
+            continentIndex[continent] = +c.continent;
+        }
+        //Find the max emissions value in the dataset.
+        var maxEmissions = d3.max(data, function (d) {
+            return +d.emissions
+        });
+
+        //Find the max consumption value in the dataset.
+        var maxConsumption = d3.max(data, function (d) {
+            return +d.consumption
+        });
+
+        //Scale emissions for the map.
+        let cScale = d3.scaleLog()
+            .domain([1, maxEmissions])
+            .range([0, 1])
+
+        //Scale consumption for the map.
+        let cScale2 = d3.scaleLog()
+            .domain([1, maxConsumption])
+            .range([0, 1])
+
+        //Set the body height and width.
+        let bodyHeight = 70
+        let bodyWidth = 80
+
+
+        //Loop through each food type.
+        for (let foodid = 0; foodid < 11; foodid++) {
+
+            //Filter the data by the food category.
+            let selected = selectData(food_list[foodid]);
+
+            //Get the mean emissions for each country for this food type.
+            for (let c of country_list) {
+                let filtered = selected.filter(function(d){return d.country == c})
+                edataIndex[c] = d3.mean(filtered, function(d){return +d.emissions})
+            }
+
+
+            //Get the mean consumption for each country for this food type.
+            for (let c of country_list) {
+                let filtered = selected.filter(function(d){return d.country == c})
+                cdataIndex[c] = d3.mean(filtered, function(d){ return +d.consumption})
+            }
+
+
+            //Loop through to plot both consumption and emissions.
+            for(let aspectid = 0; aspectid < 2; aspectid++){
+                //Select the body to plot in.
+                let body;
+                if(aspectid == 1)
+                    body = d3.select(em_List[foodid]);
+                else
+                    body = d3.select(cons_List[foodid])
+                //Add the consumption/emissions data to the map features.
+                mapInfo.features = mapInfo.features.map(d => {
+                    let country = d.properties.name;
+                    let emissions = edataIndex[country];
+                    let consumption = cdataIndex[country];
+                    let continent = continentIndex[country];
+                    d.properties.country = country;
+                    d.properties.emissions = emissions;
+                    d.properties.consumption = consumption;
+                    d.properties.continent = continent;
+                    return d;
+                })
+
+                //Scale the map projection onto the page.
+                var projection =
+                    d3.geoMercator()
+                        .scale(10)
+                        .translate([bodyWidth, bodyHeight])
+
+                //Add the paths.
+                var path = d3.geoPath()
+                    .projection(projection);
+
+                //Use f to format tooltip numbers to two digits.
+                var f = d3.format("0.2f");
+
+                //Plot the country outlines.
+                body.selectAll("path").data(mapInfo.features)
+                    .enter().append("path")
+                    .attr("d", d => path(d))
+                    .attr("stroke", "darkgrey")
+                    .attr("stroke-width", "0.2")
+                    .attr("fill", function(d){
+                        if(aspectid == 1){
+                            return d.properties.emissions >= 0 ?
+                                d3.interpolateOranges(cScale(d.properties.emissions)) :
+                                "lightgrey";
+                        } else {
+                            return d.properties.consumption >= 0 ?
+                                d3.interpolateGreens(cScale2(d.properties.consumption)) :
+                                "lightgrey";
+                        }
+                    })
+                    .on("mouseover", function (d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        div.html("Country: " + d.properties.country + "<br/>Food Type: " + food_list[foodid] +
+                            "<br/>CO2 Emissions (Kg/Person/Year): " + d.properties.emissions +
+                            "<br/>Consumption (Kg/Person/Year): " + d.properties.consumption)
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+                    //Add a listener to get rid of the tooltip on mouse out.
+                    .on("mouseout", function (d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", 0);
+                    });
+            }
+        }//End of plotting all the map multiples.
+
+        /**
+         * Now plot a bar graph with the world averages for each food type
+         */
+
+        let svg2 = d3.select("#body23") //Select the SVG group for the bar chart.
+
+
+        //Add Colour legends:
+        var colorscale1 = d3.scaleSequentialLog(d3.interpolateOranges)
+            .domain([1, maxEmissions]);
+        var legend = d3.legendColor()
+            .scale(colorscale1)
+            .cells([1,5,10,20,30,50,100,200,300,400,500,1000,1500])
+            .title("CO2 Emissions (kg/person/year)")
+            .titleWidth(150)
+            .shapePadding(0);
+        svg2.append("g")
+            .attr("class", "legendLog")
+            .attr("transform", "translate(-300,50)")
+            .call(legend);
+
+        var colorscale2 = d3.scaleSequentialLog(d3.interpolateGreens)
+            .domain([1, maxConsumption]);
+
+        var legend = d3.legendColor()
+            .scale(colorscale2)
+            .cells([1,5,10,20,30,50,100,200,300,400,500])
+            .title("Consumption (kg/person/year)")
+            .titleWidth(100)
+            .shapePadding(0);
+        svg2.append("g")
+            .attr("transform", "translate(-450,50)")
+            .call(legend);
+        //Actual bar graph now
+
+        //Get the average data into a nested form for a grouped barchart.
+        var groupData = d3.nest()
+            .key(function(d){return d.food})
+            .rollup(function(v) {
+                return [
+                    {grpName: 'Consumption',
+                        grpValue: d3.mean(v, function (d) {
+                            return d.consumption})},
+
+                    { grpName: 'Emissions',
+                        grpValue: d3.mean(v, function (d) {
+                            return d.emissions
+                        })
+                    }
+                ]
+            })
+            .entries(data);
+
+
+        //Set margins and size.
+        var margin = {top: 20, right: 20, bottom: 30, left: 40},
+            width = 1200 - margin.left - margin.right,
+            height = 600 - margin.top - margin.bottom;
+
+        //Set up the scales.
+        var x0  = d3.scaleBand().rangeRound([0, width], 0.5);
+        var x1  = d3.scaleBand()
+        var y   = d3.scaleLinear().rangeRound([height, 0]);
+
+        var xAxis = d3.axisBottom().scale(x0)
+        var yAxis = d3.axisLeft().scale(y);
+
+
+        svg2
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var categoriesNames = food_list
+        var rateNames       = ["Consumption", "Emissions"]
+
+
+        x0.domain(categoriesNames);
+        x1.domain(rateNames).rangeRound([0, x0.bandwidth()/1.2]);
+        y.domain([0, d3.max(groupData, function(key) { return d3.max(key.value, function(d) {
+            return d.grpValue; }); })]);
+
+        //Make the x axis.
+        svg2.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+            .selectAll(".tick text")
+            .call(wrap, x0.bandwidth());
+
+        //Make the y axis
+        svg2.append("g")
+            .attr("class", "y axis")
+            .style('opacity','1')
+            .call(yAxis)
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("fill", "black")
+            .style("stroke", "black")
+            .style("stroke-width", "0.1")
+            .style("font-size", "14")
+            .style("font-family", "serif")
+            .style("text-anchor", "end")
+            .style('font-weight','plain')
+            .text("Rate (kg/person/year)");
+
+        svg2.select('.y').transition().duration(500).delay(1300).style('opacity','1');
+
+
+        //Now plor the bars.
+        var slice = svg2.selectAll(".slice")
+            .data(groupData)
+            .enter().append("g")
+            .attr("class", "g")
+            .attr("transform",function(d) { return "translate(" + x0(d.key) + ",0)"; });
+
+        slice.selectAll("rect")
+            .data(function(d) { return d.value; })
+            .enter().append("rect")
+            .attr("width", x1.bandwidth())
+            .attr("x", function(d) { return x1(d.grpName)+9; })
+            .style("fill", function(d) {
+                if(d.grpName == "Consumption"){
+                    return d3.interpolateGreens(cScale2(+d.grpValue))
+                }
+                else
+                    return d3.interpolateOranges(cScale(+d.grpValue))})
+
+            .attr("y", function(d) { return y(0); })
+            .attr("height", function(d) { return height - y(0); })
+            .style("stroke", "black")
+            .style("stroke-width", "0.1")
+            .on("mouseover", function (d) {
+                div.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                div.html(""+d.grpName+ ": "+ f(d.grpValue) + " (kg/Person/Year)")
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            //Add a listener to get rid of the tooltip on mouse out.
+            .on("mouseout", function (d) {
+                div.transition()
+                    .duration(200)
+                    .style("opacity", 0);
+            })
+
+
+        //Fun little animation on entrance.
+        slice.selectAll("rect")
+            .transition()
+            .delay(function (d) {return d.grpValue*Math.random();})
+            .duration(1000)
+            .attr("y", function(d) { return y(d.grpValue); })
+            .attr("height", function(d) { return height - y(d.grpValue); });
+
+        //Move over so its not on top of the colour legend.
+        svg2.attr("transform", "translate(500, 50)")
+
+        //Add a title.
+        svg2.append("text")
+            .attr("class", "title")
+            .attr("transform", "translate(400, 50)")
+            .style("font-size", "20")
+            .style("font-weight", "bold")
+            .text("Global Averages by Food Category");
+
+
+        /**
+         * Selects and filters the data based on which map is being plotted (by food type).
+         */
+        function selectData(choice){
+            let selected = data.filter(function(d){return d.food == choice})
+
+            edataIndex = {};
+            for (let c of country_list) {
+                let filtered = selected.filter(function(d){return d.country == c})
+                edataIndex[c] = d3.mean(filtered, function(d){return +d.emissions})
+            }
+
+            cdataIndex = {};
+            for (let c of country_list) {
+                let filtered = selected.filter(function(d){return d.country == c})
+                cdataIndex[c] = d3.mean(filtered, function(d){ return +d.consumption})
+            }
+
+            return selected;
+        }
+    }
+
+    /**
+     * Function taken from https://bl.ocks.org/mbostock/7555321 to wrap x-axis labels.
+     * @param text
+     * @param width
+     */
+    function wrap(text, width) {
+        text.each(function() {
+            var text = d3.select(this),
+                words = text.text().split(/\s+/).reverse(),
+                word,
+                line = [],
+                lineNumber = 0,
+                lineHeight = 1.1, // ems
+                y = text.attr("y"),
+                dy = parseFloat(text.attr("dy")),
+                tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+            while (word = words.pop()) {
+                line.push(word);
+                tspan.text(line.join(" "));
+                if (tspan.node().getComputedTextLength() > width) {
+                    line.pop();
+                    tspan.text(line.join(" "));
+                    line = [word];
+                    tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                }
+            }
+        });
+    }
+
+    function type(d) {
+        d.value = +d.value;
+        return d;
+    }
+
+
+
+</script>
+
+</html>
