@@ -1,0 +1,251 @@
+
+<!-- Modified the code from:  https://sabahatiqbal.medium.com/making-a-d3-js-scatter-plot-interactive-19916fb10bb1-->
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style type="text/css">
+    div.tooltip {
+        position: absolute;
+        text-align: left;
+        width: 250px;
+        /*height: 28px;         */
+        padding: 2px;
+        font: 12px sans-serif;
+        background: lightgrey;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+</style>
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3-legend/1.1.0/d3-legend.js"></script>
+
+<script
+        src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"
+></script>
+
+
+<!-- Bootstrap grid setup -->
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h3>
+                Emissions vs. Consumption for Different Foods
+            </h3>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-8">
+            <select id="foodChoice" input="dropdown">
+                <option value="allFood">All Foods</option>
+                <option value="Beef">Beef</option>
+                <option value="Eggs">Eggs</option>
+                <option value="Fish">Fish</option>
+                <option value="Lamb & Goat">Lamb & Goat</option>
+                <option value="Milk - inc. cheese">Milk - inc. cheese</option>
+                <option value="Nuts inc. Peanut Butter">Nuts inc. Peanut Butter</option>
+                <option value="Pork">Pork</option>
+                <option value="Poultry">Poultry</option>
+                <option value="Rice">Rice</option>
+                <option value="Soybeans">Soybeans</option>
+                <option value="Wheat and Wheat Products">Wheat and Wheat Products</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<script>
+
+    var color_table = {
+        "North America" :   "#1B998B",
+        "South America" :   "#58355E",
+        "Europe" :          "#FFF689",
+        "Africa" :          "cyan",
+        "Asia" :            "#E03616",
+        "Oceania" :         "#C874D9"
+    };
+
+
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 30, bottom: 50, left: 60},
+        width = 900 - margin.left - margin.right,
+        height = 600 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#my_dataviz")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+
+
+    var food_list = {"Wheat and Wheat Products":1, "Milk - inc. cheese":2, "Beef":3, "Eggs":4,"Poultry":5,"Lamb & Goat":6,"Pork":7,"Nuts inc. Peanut Butter":8,"Rice":9, "Soybeans":10,"Fish":11}
+    var shape_list = {1: "\u{1F35E}", 2: "\u{1F95B}", 3:"\u{1F404}", 4:"\u{1F95A}", 5:"\u{1F413}", 6:"\u{1F410}", 7:"\u{1F437}", 8:"\u{1F95C}", 9:"\u{1F35A}", 10:"\u{1F331}", 11:"\u{1F41F}"}
+
+
+
+
+    //Read the data
+
+    d3.csv("addedcontinents.csv", function(d){
+        updateChart(d);
+
+        //Add in event listener for food choice.
+        $("#foodChoice").on("change", function () {
+            updateChart(d);
+        });
+
+        //Add in event listener for continent choice.
+        $("#continentChoice").on("change", function () {
+            updateChart(d);
+        });
+    })
+
+
+
+
+    function updateChart(data){
+        // Define the div for the tooltip
+        let div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        let filteredData = data;
+        svg.selectAll("*").remove();
+
+        filteredData =
+            $("#foodChoice").val() === "allFood"
+                ? data
+                : data.filter(function(d){return d.food == $("#foodChoice").val()}
+                );
+
+
+        filteredData =
+            $("#continentChoice").val() === "allCont"
+                ? filteredData
+                : filteredData.filter(function(d){return d.continent == $("#continentChoice").val()}
+                );
+
+        console.log(filteredData);
+
+        // Add X axis
+        var x = d3.scaleLinear()
+            .domain([0, d3.max(data, function (d) {
+                return +d.consumption;
+            })])
+            .range([0, width]);
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+        //Add x-axis label:
+        svg
+            .append("text")
+            .attr("transform", "translate(" + width / 2 + " ," + (height + margin.top + 30) + ")")
+            .style("text-anchor", "middle")
+            .text("Consumption (kg/person/year)");
+
+        // Add Y axis
+        var y = d3.scaleLinear()
+            .domain([0, d3.max(data, function (d) {
+                return +d.emissions;
+            })])
+            .range([height, 0]);
+        svg.append("g")
+            .call(d3.axisLeft(y));
+
+        //Add y-axis label:
+        svg
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -40)
+            .attr("x", 0 - height / 2)
+            .style("text-anchor", "middle")
+            .text("CO2 Emissions (kg/person/year)");
+
+        var gdots =  svg.selectAll("g.dot")
+            .data(filteredData)
+            .enter().append('g')
+            .on("mouseover", function (d) {
+                this.style.fill = "black";
+                div.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                div.html("Continent: " + d.continent + "<br/>Country: " + d.country + "<br/>Food type: " + d.food +
+                    "<br/>Co2 emission(Kg/Person/Year): " + d.emissions + "<br/>Consumption (Kg/Person/Year): " + d.consumption)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function (d) {
+                div.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+
+        gdots.append("circle")
+            .attr("class", "dot")
+            .attr("r", 10)
+            .attr("cx", function (d) {
+                return x(d.consumption);
+            })
+            .attr("cy", function (d) {
+                return y(d.emissions);
+            })
+            .style("fill", function (d) {
+                return color_table[d.continent];
+            })
+            .style("opacity", 0.60)
+            .on("mouseover", function (d) {
+                this.style.fill = "black"})
+            .on("mouseout", function (d) {
+                this.style.fill = color_table[d.continent];
+            });
+
+
+        gdots.append("text")
+            .attr("x", function(d){return x(d.consumption)})
+            .attr("y", function(d){return y(d.emissions-10)})
+            .style("text-anchor", "middle")
+            .text(function(d) { return shape_list[food_list[d.food]];})
+            .style("font-size", 10);
+
+        //Colour legend adapted from: https://www.d3-graph-gallery.com/graph/custom_legend.html
+        var keys = ["North America", "South America", "Africa", "Europe", "Asia", "Oceania"];
+        // Add one dot in the legend for each name.
+        svg.selectAll("mydots")
+            .data(keys)
+            .enter()
+            .append("circle")
+            .attr("cx", 600)
+            .attr("cy", function(d,i){ return 20 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+            .attr("r", 7)
+            .style("opacity", 0.60)
+            .style("fill", function(d){ return color_table[d]})
+
+        // Add one dot in the legend for each name.
+        svg.selectAll("mylabels")
+            .data(keys)
+            .enter()
+            .append("text")
+            .attr("x", 620)
+            .attr("y", function(d,i){ return 20 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+            .style("fill", "black")
+            .text(function(d){ return d})
+            .attr("text-anchor", "left")
+            .style("alignment-baseline", "middle")
+    }
+
+</script>
+</html>
